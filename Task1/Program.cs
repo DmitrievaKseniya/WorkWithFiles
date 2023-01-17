@@ -13,46 +13,47 @@ namespace Task1
             Console.WriteLine("Введите путь к папке, для очистки:");
             strPath = Console.ReadLine();
 
-            CleanFolder(strPath);
-            Console.WriteLine("директория успешно очищена от файлов не используемых в течении 30 минут!");
+            DirectoryInfo directoryInfo = new DirectoryInfo(strPath);
+
+            if (directoryInfo.Exists)
+            {
+                CleanFolder(directoryInfo);
+                Console.WriteLine("директория успешно очищена от файлов не используемых в течении 30 минут!");
+            }
+            else
+                Console.WriteLine("По указанному пути папки не существует!");
         }
 
-        static public void CleanFolder(string PathFolder)
+        static public void CleanFolder(DirectoryInfo directoryInfo)
         {
             TimeSpan interval = TimeSpan.FromMinutes(30);
 
-            if (Directory.Exists(PathFolder))
+            
+            foreach (FileInfo fileInfo in directoryInfo.GetFiles())
             {
-                foreach (string fileInfo in Directory.GetFiles(PathFolder))
+                try
                 {
-                    try
-                    {
-                        if ((File.GetLastAccessTime(fileInfo) + interval) < DateTime.Now)
-                            File.Delete(fileInfo);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Не удалось получить доступ к файлу: {fileInfo} по причине: {ex.ToString()}");
-                    }
+                    if ((fileInfo.LastAccessTime + interval) < DateTime.Now)
+                        fileInfo.Delete();
                 }
-
-                foreach (string dir in Directory.GetDirectories(PathFolder))
+                catch (Exception ex)
                 {
-                    CleanFolder(dir);
-                    try
-                    {
-                        if ((Directory.GetLastAccessTime(dir) + interval) < DateTime.Now)
-                            Directory.Delete(dir);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Не удалось получить доступ к каталогу: {dir} по причине: {ex.ToString()}");
-                    }
+                    Console.WriteLine($"Не удалось получить доступ к файлу: {fileInfo.FullName} по причине: {ex.ToString()}");
                 }
             }
-            else
+
+            foreach (DirectoryInfo dir in directoryInfo.GetDirectories())
             {
-                Console.WriteLine("По указанному пути папки не существует!");
+                CleanFolder(dir);
+                try
+                {
+                    if ((directoryInfo.LastAccessTime + interval) < DateTime.Now)
+                        directoryInfo.Delete();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Не удалось получить доступ к каталогу: {dir.FullName} по причине: {ex.ToString()}");
+                }
             }
         }
     }
